@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Barangay Registration - Step 1</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="form-container">
+        <h2>Barangay Registration</h2>
+        <p>Step 1 of 3: Select the type of ID you want to scan, then point your camera at it.</p>
+
+        <!-- ID Type Selection -->
+        <label for="idType">Choose ID Type:</label>
+        <select id="idType" class="input-field" required>
+            <option value="">Select ID Type</option>
+            <option value="Barangay_ID">Barangay ID</option>
+            <option value="National_ID">National ID</option>
+            <option value="Passport">Passport</option>
+            <option value="Driver's_License">Driver's License</option>
+            <option value="SSS_ID">SSS ID</option>
+            <option value="PRC_ID">PRC ID</option>
+            <option value="Senior_Citizen_ID">Senior Citizen ID</option>
+            <option value="School_ID">School ID</option>
+            <option value="PhilHealth_ID">PhilHealth ID</option>
+            <option value="PWD_ID">PWD ID</option>
+        </select>
+
+        <!-- Scan ID Button -->
+        <button id="scanButton" class="btn" style="display: none;">Scan ID</button>
+
+        <!-- Video stream to show live camera feed (Hidden initially) -->
+        <video id="video" width="100%" height="auto" autoplay style="display: none;"></video>
+
+        <!-- Canvas for processing the image -->
+        <canvas id="canvas" style="display: none;"></canvas>
+        <img id="capturedImage" src="" alt="Captured ID" style="display:none; width: 100%; margin-top: 20px;" />
+
+        <!-- Capture button to capture the ID when visible -->
+        <button id="captureButton" class="btn" style="display: none;">Capture</button>
+
+        <div>
+            <button id="nextButton" class="btn" style="display: none;">Next</button>
+        </div>
+
+        <div class="register-link">
+            <p>Already registered? <a href="login_page.html">Login here</a></p>
+        </div>
+    </div>
+
+    <script>
+        let video = document.getElementById("video");
+        let canvas = document.getElementById("canvas");
+        let context = canvas.getContext("2d");
+        let scanButton = document.getElementById("scanButton");
+        let nextButton = document.getElementById("nextButton");
+        let idTypeSelect = document.getElementById("idType");
+        let capturedImage = document.getElementById("capturedImage");
+        let captureButton = document.getElementById("captureButton");
+
+        // Enable the scan button when an ID type is selected
+        idTypeSelect.addEventListener("change", () => {
+            if (idTypeSelect.value) {
+                scanButton.style.display = "block"; // Show scan button when ID type is selected
+            } else {
+                scanButton.style.display = "none"; // Hide scan button if no ID type is selected
+            }
+        });
+
+        // Request camera access when Scan ID button is clicked
+        scanButton.addEventListener("click", () => {
+            navigator.mediaDevices
+                .getUserMedia({ video: true })
+                .then((stream) => {
+                    video.srcObject = stream;
+                    video.style.display = "block"; // Show the video once the camera is activated
+                    scanButton.style.display = "none"; // Hide the scan button after it's clicked
+                    captureButton.style.display = "block"; // Show the capture button
+                    nextButton.style.display = "none"; // Hide the next button initially
+                })
+                .catch((err) => {
+                    alert("Could not access the camera.");
+                    console.error(err);
+                });
+        });
+
+        // Function to check if the ID is in focus and has sufficient contrast
+        function checkForValidID() {
+            // Capture a frame from the video
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Get pixel data from the canvas
+            let imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            let pixelData = imageData.data;
+
+            // A simple check if there is enough color contrast (for detecting a valid ID)
+            let hasContrast = false;
+            for (let i = 0; i < pixelData.length; i += 4) {
+                // Check for contrast, for instance, detecting red regions (this is a basic placeholder)
+                if (pixelData[i] > 200 && pixelData[i + 1] < 100 && pixelData[i + 2] < 100) {
+                    hasContrast = true;
+                    break;
+                }
+            }
+
+            // If valid contrast is detected, allow the user to proceed
+            if (hasContrast) {
+                nextButton.style.display = "block"; // Show the next button if ID is detected
+                alert("ID detected successfully. You can now proceed.");
+            } else {
+                alert("No valid ID detected. Please adjust the camera position.");
+            }
+        }
+
+        // Capture button action: Capture the ID image when clicked
+        captureButton.addEventListener("click", () => {
+            checkForValidID(); // Call the function to check if a valid ID is detected before capturing
+
+            // If valid ID detected, capture the frame
+            if (nextButton.style.display === "block") {
+                // Capture the frame from the video
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                // Convert the canvas to an image
+                let dataUrl = canvas.toDataURL("image/png");
+
+                // Display the captured image
+                capturedImage.src = dataUrl;
+                capturedImage.style.display = "block"; // Show the captured image
+
+                // Hide the video and capture button
+                video.style.display = "none";
+                captureButton.style.display = "none";
+
+                // Show the Next button
+                nextButton.style.display = "block";
+            }
+        });
+
+        // Next button action
+        nextButton.addEventListener("click", () => {
+            // Proceed to the next step
+            window.location.href = "personal_information.html";
+        });
+    </script>
+</body>
+
+</html>
